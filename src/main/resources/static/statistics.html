@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>数据统计</title>
+
+    <script type="text/javascript" src="js/jquery/2.0.0/jquery.min.js"></script>
+    <link href="css/bootstrap/3.3.6/bootstrap.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/bootstrap/3.3.6/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/vue.min.js"></script>
+
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: 100%;
+        }
+
+        .div_btn_group {
+            padding-top: 10px;
+            padding-right: 2px;
+            width: 8%;
+            height: 100%;
+            background-color: #9acfea;
+            float: left;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 92%;
+            height: 100%;
+            float: right;
+        }
+
+        .btn-primary {
+            margin: 1px 0;
+            padding: 20px 0;
+            width: 100%;
+        }
+
+        #data {
+            position: absolute;
+            width: 200px;
+            height: 100px;
+            left: 50%;
+            top: 50%;
+            margin-left: -100px;
+            margin-top: -50px;
+            text-align: center;
+        }
+
+        .count, .amount {
+            display: inline-block;
+        }
+    </style>
+
+</head>
+<body>
+<div class="div_btn_group">
+    <input class="btn btn-primary" type="button" value="商品管理" onclick="window.location.href='/productManager.html'"><br>
+    <input class="btn btn-primary" type="button" value="数据统计" onclick="window.location.href='/statistics.html'"><br>
+    <input class="btn btn-primary" type="button" value="订单管理" onclick="window.location.href='/orderManager.html'"><br>
+</div>
+
+<div id="app">
+    <div id="data">
+        订单数量:<p class="count">{{count}}</p>
+        总金额:<p class="amount">{{amount}}</p><br>
+        统计订单:
+        <table class="table">
+            <tr>
+                <th>商品名</th>
+                <th>订单数</th>
+                <th>卖出商品总数</th>
+            </tr>
+            <tr v-for="oi in orderItems">
+                <td>{{oi.name}}</td>
+                <td>{{oi.count}}</td>
+                <td>{{oi.sum}}</td>
+            </tr>
+        </table>
+    </div>
+</div>
+
+</body>
+
+<script>
+
+    new Vue({
+        el: "#app",
+        data: {
+            count: 0,
+            amount: 0,
+            orderItems: [],
+        },
+        mounted: function () {
+            var self = this;
+            fetch("getCountAndAmount").then(function (response) {
+                response.json().then(function (jsonObject) {
+                    console.log(jsonObject);
+                    self.count = jsonObject.count;
+                    self.amount = jsonObject.amount;
+                })
+            })
+            fetch("findOrderItem").then(function (response) {
+                response.json().then(function (jsonObject) {
+                    console.log(jsonObject);
+                    self.orderItems = jsonObject;
+                })
+            })
+        }
+    })
+
+
+</script>
+
+</html>

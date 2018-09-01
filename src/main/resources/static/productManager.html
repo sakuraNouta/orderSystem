@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>商品管理</title>
+
+    <script type="text/javascript" src="js/jquery/2.0.0/jquery.min.js"></script>
+    <link href="css/bootstrap/3.3.6/bootstrap.min.css" rel="stylesheet">
+    <script type="text/javascript" src="js/bootstrap/3.3.6/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/vue.min.js"></script>
+
+    <style>
+        html {
+            height: 100%;
+        }
+
+        body {
+            height: 100%;
+        }
+
+        .div_btn_group {
+            padding-top: 10px;
+            padding-right: 2px;
+            width: 8%;
+            height: 100%;
+            background-color: #9acfea;
+            float: left;
+            overflow: hidden;
+        }
+
+        #app {
+            width: 92%;
+            height: 100%;
+            float: right;
+        }
+
+        #table_add {
+            width: 800px;
+            border: 1px solid;
+        }
+
+        .div_add {
+            text-align: center;
+        }
+
+        .p_tip {
+            font-size: 20px;
+
+        }
+
+        .btn-primary {
+            margin: 1px 0;
+            padding: 20px 0;
+            width: 100%;
+        }
+
+        .form-control {
+            width: 200px;
+            display: inline-block;
+        }
+
+        #query {
+            padding: 10px
+        }
+    </style>
+
+</head>
+<body>
+<div class="div_btn_group">
+    <input class="btn btn-primary" type="button" value="商品管理" onclick="window.location.href='/productManager.html'"><br>
+    <input class="btn btn-primary" type="button" value="数据统计" onclick="window.location.href='/statistics.html'"><br>
+    <input class="btn btn-primary" type="button" value="订单管理" onclick="window.location.href='/orderManager.html'"><br>
+</div>
+
+<div id="app">
+    <div id="query">
+        <span>搜索商品名及详情:</span>
+        <input class="form-control" value="" v-model="text"/>
+        <input type="button" value="搜索" @click="query"/>
+    </div>
+    <table class="table">
+        <thead>
+        <th></th>
+        <th>图片</th>
+        <th>商品名</th>
+        <th>价格</th>
+        <th>详情</th>
+        <th>操作</th>
+        </thead>
+        <tr v-if="show">
+            <td></td>
+            <td><input type="file" name="file" accept="image/*" value="点击上传图片" @change="upload"/></td>
+            <td><input v-model='updateProduct.name'/></td>
+            <td><input v-model="updateProduct.price"/></td>
+            <td><input v-model="updateProduct.info"></td>
+            <td><input type="button" value="提交" @click="complete"/></td>
+        </tr>
+        <tr v-for="product,index in products">
+            <td>&nbsp;&nbsp;{{index+1}}</td>
+            <td><img :src="product.imgSrc" width="100" height="60"/></td>
+            <td>{{product.name}}</td>
+            <td>{{product.price}}</td>
+            <td>{{product.info}}</td>
+            <td>
+                <button class="btn btn-info" @click="edit(index)">编辑</button>
+                <button class="btn btn-danger" @click="del(index)">删除</button>
+            </td>
+        </tr>
+    </table>
+
+    <nav id="nav_pager">
+        <ul class="pager">
+            <li><a @click="home">首页</a></li>
+            <li><a @click="pre">上一页</a></li>
+            <input v-model="page"/>
+            <li><a @click="jump">跳转</a></li>
+            <li><a @click="next">下一页</a></li>
+        </ul>
+    </nav>
+
+    <div class="div_add">
+        <p class="p_tip">新增商品:</p>
+        <table id="table_add" class="table" align="center">
+            <thead>
+            <th>商品名</th>
+            <th>价格</th>
+            <th>图片</th>
+            <th>描述详情</th>
+            <th></th>
+            </thead>
+            <tr>
+                <td><input v-model='product.name'/></td>
+                <td><input v-model="product.price"/></td>
+                <td><input type="file" name="file" accept="image/*" value="点击上传图片" @change="upload"/></td>
+                <td><input v-model="product.info"></td>
+                <td><input type="button" value="提交" @click="submit"/></td>
+            </tr>
+        </table>
+    </div>
+
+</div>
+</body>
+
+<script>
+
+    function getData(val) {
+        var self = val;
+        const size = 5;
+        var url = "/product?size=" + size + "&start=" + (self.page - 1) * size;
+        fetch(url).then(function (response) {
+            response.json().then(function (jsonObject) {
+                console.log(jsonObject);
+                if (jsonObject == null) {
+                    self.page = self.backPage;
+                    return;
+                }
+                else {
+                    self.backPage = self.page;
+                }
+                self.products = jsonObject;
+            })
+        })
+    }
+
+    new Vue({
+        el: "#app",
+        data: {
+            /*ajax请求json数据*/
+            products: [],
+            product: {'imgSrc':'E:/Java/Project/orderSystem/img','name': ' ', 'price': 0, 'info': ' '},
+            updateProduct: {},
+            page: 1,
+            backPage: 1,
+            text: "",
+            show: false,
+        },
+        mounted: function () {
+            getData(this);
+        },
+        methods: {
+            submit: function () {
+                var self = this;
+                console.log(JSON.stringify(self.product));
+                fetch("product", {
+                    headers: {"Content-Type": 'application/json; charset=UTF-8'},
+                    method: 'post',
+                    body: JSON.stringify(self.product),
+                })
+                    .then(function (result) {
+                        alert("成功");
+                        self.product = {};
+                    })
+            },
+            upload: function (e) {
+                var self = this;
+                var file = e.target.files[0];
+                var formData = new FormData();
+                formData.append('file', file);
+
+                console.log(formData);
+                fetch("upload", {
+                    contentType: false,
+                    method: 'post',
+                    body: formData,
+                })
+                    .then(function (response) {
+                        response.json().then(function (jsonObject) {
+                            console.log(jsonObject.path);
+                            self.product.imgSrc = jsonObject.path;
+                            self.updateProduct.imgSrc = jsonObject.path;
+                        })
+                    })
+            },
+            home() {
+                this.page = 1;
+                getData(this);
+            },
+            pre() {
+                if (this.page > 1) {
+                    this.page -= 1;
+                }
+                getData(this);
+            },
+            next() {
+                this.page += 1;
+                getData(this);
+            },
+            jump() {
+                getData(this);
+            },
+            query() {
+                var self = this;
+                var url = "/queryProduct?text=" + this.text;
+                fetch(url).then(function (response) {
+                    response.json().then(function (jsonObject) {
+                        console.log(jsonObject);
+                        self.products = jsonObject;
+                    })
+                })
+            },
+            edit: function (index) {
+                this.show = true;
+                this.updateProduct = this.products[index];
+            },
+            complete: function() {
+                var self = this;
+                fetch("/updateProduct",{
+
+                    headers: {"Content-Type": 'application/json; charset=UTF-8'},
+                    method: 'post',
+                    body: JSON.stringify(self.updateProduct),
+
+                }).then(function() {
+                    self.show = false;
+                })
+            },
+            del: function (index) {
+                var self = this;
+                if(!confirm("确定要删除吗")) {
+                    return;
+                }
+                fetch("/deleteProduct?id=" + self.products[index].id)
+                    .then(function ()  {
+                        getData(self);
+                    })
+            },
+        }
+    })
+</script>
+
+</html>
